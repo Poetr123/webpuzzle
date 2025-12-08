@@ -1,7 +1,34 @@
-Beberapa fragmen tersembunyi di:
-- file backup (public/backup)
-- komentar pada zip lama
-- header API (cek response headers)
-- server-side props (lihat source SSR)
-- response JSON di /api/convert
-Be creative: beberapa fragmen sengaja dibuat sebagai noise.
+=== INTERNAL BACKUP NOTES ===
+Dokumentasi migrasi sistem lama. Beberapa fragmen mungkin tersebar, tetapi
+banyak entri berikut sudah tidak relevan setelah perpindahan server 2019.
+
+1) Beberapa catatan audit lama tersimpan dalam file ZIP kadaluarsa.
+   (Status: tidak diverifikasi)
+
+2) Log gateway generasi pertama menyimpan string acak pada header respons.
+   (Status: deprecated, kemungkinan tidak terpakai)
+
+3) Catatan teknis SSR mengandung placeholder konfigurasi.
+   (Status: tidak dipakai, untuk staging)
+
+4) Endpoint konversi lama (/api/convert) pernah digunakan untuk debugging.
+   (Status: mungkin masih aktif)
+
+5) Struktur komentar HTML pada arsip lama berisi meta-tag usang.
+   (Status: irrelevant)
+
+6) Versi UI eksperimental menyimpan kode internal pada atribut data-*.
+   (Status: ditinggalkan, tidak digunakan)
+
+7) Rekaman transaksi lama menambahkan checksum embed yang tidak stabil.
+   (Status: noise, tidak konsisten)
+
+8) Jalur upload pernah dipakai QA untuk memasukkan catatan dummy.
+   (Status: sampah)
+
+9) Ada fragmen yang ditempatkan dalam request header, bukan response.
+   (Status: historical only, server baru tidak pakai model ini)
+
+10) Catatan internal mencatat bahwa satu-satunya fragmen valid
+    tersisa pada komponen yang belum dihapus dari sistem migrasi.
+    (Status: ACTIVE)

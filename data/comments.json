@@ -1,0 +1,11 @@
+[
+  {
+    "text": "Hello, this is a comment."
+  },
+  {
+    "text": "dan chat"
+  },
+  {
+    "text": "<script>console.log('harmless')</script>"
+  }
+]

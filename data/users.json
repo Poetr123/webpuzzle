@@ -1,0 +1,23 @@
+[
+  {
+    "id": "u1",
+    "username": "alice",
+    "password": "alice123",
+    "role": "user",
+    "accountId": "a100"
+  },
+  {
+    "id": "u2",
+    "username": "support",
+    "password": "supportme",
+    "role": "support",
+    "accountId": "a200"
+  },
+  {
+    "id": "u0",
+    "username": "admin",
+    "password": "admin123",
+    "role": "admin",
+    "accountId": "a000"
+  }
+]

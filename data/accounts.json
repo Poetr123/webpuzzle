@@ -1,0 +1,20 @@
+[
+  {
+    "id": "a100",
+    "name": "Alice",
+    "balance": 5000000,
+    "note": "rekening personal"
+  },
+  {
+    "id": "a200",
+    "name": "Support Team",
+    "balance": 1000000,
+    "note": "l4nJut ke 5t3p 13eriKutny4\""
+  },
+  {
+    "id": "a000",
+    "name": "Admin",
+    "balance": 99999999,
+    "note": "system account - do not touch"
+  }
+]

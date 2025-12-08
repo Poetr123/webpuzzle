@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "id": 101,
+      "owner": "Aldo Saputra",
+      "balance": 12500000,
+      "number": "BF-101"
+    },
+    {
+      "id": 102,
+      "owner": "Rina S.",
+      "balance": 9800000,
+      "number": "BF-102"
+    }
+  ]
+}

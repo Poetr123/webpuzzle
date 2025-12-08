@@ -1,0 +1,7 @@
+Beberapa fragmen tersembunyi di:
+- file backup (public/backup)
+- komentar pada zip lama
+- header API (cek response headers)
+- server-side props (lihat source SSR)
+- response JSON di /api/convert
+Be creative: beberapa fragmen sengaja dibuat sebagai noise.

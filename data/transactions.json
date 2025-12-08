@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "from": "BF-101",
+    "to": "BF-102",
+    "amount": 500000,
+    "note": "monthly"
+  },
+  {
+    "id": 2,
+    "from": "BF-102",
+    "to": "BF-101",
+    "amount": 150000,
+    "note": "refund"
+  }
+]

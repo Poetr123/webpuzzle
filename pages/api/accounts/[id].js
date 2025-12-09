@@ -18,7 +18,7 @@ export default function Account({ account, hiddenNote, transactions }) {
 
         <section style={{marginTop:20}}>
           <h3>Riwayat Transaksi Terkait</h3>
-          {transactions.length === 0 ? <p>Tidak ada transaksi untuk akun ini.</p> : (
+          {transactions && transactions.length === 0 ? <p>Tidak ada transaksi untuk akun ini.</p> : (
             <ul>
               {transactions.map(tx => (
                 <li key={tx.id}>
@@ -40,10 +40,15 @@ export async function getServerSideProps({ params }) {
   const all = JSON.parse(raw).accounts
   const account = all.find(a => String(a.id) === params.id) || null
 
+  // read transactions and filter for this account number
   const tPath = path.join(process.cwd(), 'data', 'transactions.json')
-  const tRaw = fs.readFileSync(tPath, 'utf8')
-  const allTx = JSON.parse(tRaw)
-
+  let allTx = []
+  try {
+    const tRaw = fs.readFileSync(tPath,'utf8')
+    allTx = JSON.parse(tRaw)
+  } catch (e) {
+    allTx = []
+  }
   const txs = allTx.filter(tx => tx.from === account?.number || tx.to === account?.number)
 
   let hiddenNote = "frag-03: in the API comments";

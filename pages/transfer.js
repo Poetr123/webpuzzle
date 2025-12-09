@@ -13,7 +13,7 @@ export default function Transfer(){
           <label>Amount<input name="amount" /></label><br/>
           <button type="submit">Kirim</button>
         </form>
-        <p style={{marginTop:12, color:'#666'}}>Catatan: interface ini hanya demo.</p>
+        <p style={{marginTop:12, color:'#666'}}>User rahasia..(?)</p>
       </main>
       <Footer />
     </div>

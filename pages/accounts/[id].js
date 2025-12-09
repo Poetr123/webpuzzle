@@ -28,7 +28,7 @@ export async function getServerSideProps({params}){
 
 
   let hiddenNote = "frag-03: in the API comments";
-  if(params.id === '102') hiddenNote = "Berhasil melakukan transfer ke: 708708017";
+  if(params.id === '102') hiddenNote = "dan chat";
 
   return { props: { account, hiddenNote } }
 }

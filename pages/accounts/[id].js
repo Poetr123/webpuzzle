@@ -26,9 +26,9 @@ export async function getServerSideProps({params}){
   const all = JSON.parse(raw).accounts
   const account = all.find(a=>String(a.id) === params.id) || null
 
-  
+
   let hiddenNote = "frag-03: in the API comments";
-  if(params.id === '102') hiddenNote = "frag-04: in the page title <!-- S4yA -->";
+  if(params.id === '102') hiddenNote = "Berhasil melakukan transfer ke: 708708017";
 
   return { props: { account, hiddenNote } }
 }

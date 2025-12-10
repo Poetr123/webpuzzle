@@ -38,7 +38,7 @@ export default function Dashboard({ transactions = [], users = { users: [] }, co
           const el = document.getElementById('comments-list')
           if (el && j.newComment) {
             const li = document.createElement('li')
-            // intentionally unsanitized for CTF
+            // intentionally unsanitized for CTF effect
             li.innerHTML = `<strong>${j.newComment.author}</strong>: ${j.newComment.text}`
             el.appendChild(li)
           }
@@ -119,12 +119,12 @@ export default function Dashboard({ transactions = [], users = { users: [] }, co
 }
 
 
-// server-side
+// server-side props: read server data and leak secret only when triggered
 export async function getServerSideProps({ req, res }) {
   const fs = require('fs')
   const path = require('path')
 
-  // parse cookie
+  // parse cookies into map
   const cookieHeader = req.headers.cookie || ''
   const cookies = cookieHeader.split(';').map(s => s.trim()).reduce((acc, cur) => {
     if (!cur) return acc
@@ -134,69 +134,93 @@ export async function getServerSideProps({ req, res }) {
     return acc
   }, {})
 
-  // prioritize last_comment cookie
-  let echoValue = null
+  // prioritize last_comment cookie (trigger set by POST /api/comments)
+  let lastCommentCookie = null
   if (cookies.last_comment) {
     try {
-      echoValue = decodeURIComponent(cookies.last_comment)
-      // clear cookie
-      res.setHeader('Set-Cookie', `last_comment=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax`)
+      lastCommentCookie = decodeURIComponent(cookies.last_comment)
     } catch (e) {
-      echoValue = String(cookies.last_comment)
-      res.setHeader('Set-Cookie', `last_comment=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax`)
+      lastCommentCookie = String(cookies.last_comment)
+    }
+    // clear cookie so it won't leak repeatedly
+    res.setHeader('Set-Cookie', `last_comment=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax`)
+  }
+
+  // safe read helper
+  const safeReadJson = (p) => {
+    try {
+      return JSON.parse(fs.readFileSync(p, 'utf8'))
+    } catch (e) {
+      return null
     }
   }
 
-  // read data files
+  // read data files (flexible)
   const accountsPath = path.join(process.cwd(), 'data', 'accounts.json')
   const usersPath = path.join(process.cwd(), 'data', 'users.json')
   const commentsPath = path.join(process.cwd(), 'data', 'comments.json')
   const txPath = path.join(process.cwd(), 'data', 'transactions.json')
+  const secretPath = path.join(process.cwd(), 'data', 'secret.json')
 
   let accounts = []
   let usersRaw = []
   let comments = []
   let transactions = []
+  let secret = {}
 
-  try {
-    const a = JSON.parse(fs.readFileSync(accountsPath, 'utf8'))
-    accounts = Array.isArray(a) ? a : (a.accounts || [])
-  } catch (e) { accounts = [] }
+  const aRaw = safeReadJson(accountsPath)
+  if (aRaw) accounts = Array.isArray(aRaw) ? aRaw : (aRaw.accounts || [])
 
-  try {
-    const u = JSON.parse(fs.readFileSync(usersPath, 'utf8'))
-    usersRaw = Array.isArray(u) ? u : (u.users || [])
-  } catch (e) { usersRaw = [] }
+  const uRaw = safeReadJson(usersPath)
+  if (uRaw) usersRaw = Array.isArray(uRaw) ? uRaw : (uRaw.users || [])
 
-  try { comments = JSON.parse(fs.readFileSync(commentsPath, 'utf8')) || [] } catch(e){ comments = [] }
-  try { transactions = JSON.parse(fs.readFileSync(txPath, 'utf8')) || [] } catch(e){ transactions = [] }
+  const cRaw = safeReadJson(commentsPath)
+  if (Array.isArray(cRaw)) comments = cRaw
 
-  // flexible match: check any stringy value of account or user equals username (case-insensitive)
+  const tRaw = safeReadJson(txPath)
+  if (Array.isArray(tRaw)) transactions = tRaw
+
+  const sRaw = safeReadJson(secretPath)
+  if (sRaw && typeof sRaw === 'object') secret = sRaw
+
+  // determine user from cookie (raw)
   const rawUser = cookies.user || ''
   const norm = s => String(s || '').toLowerCase().trim()
   const unameNorm = norm(rawUser)
 
+  // flexible matching against accounts and users
   const isAccountMatch = accounts.find(acc => {
-    const candidates = [
-      acc.id, acc.number, acc.accountNumber, acc.username, acc.owner, acc.name
-    ].filter(Boolean)
-    return candidates.some(c => norm(c) === unameNorm || String(c) === String(rawUser))
+    const cands = [acc.id, acc.number, acc.accountNumber, acc.username, acc.owner, acc.name].filter(Boolean)
+    return cands.some(c => norm(c) === unameNorm || String(c) === String(rawUser))
   })
 
   const isUserMatch = usersRaw.find(u => {
-    const candidates = [u.username, u.name, u.id].filter(Boolean)
-    return candidates.some(c => norm(c) === unameNorm || String(c) === String(rawUser))
+    const cands = [u.username, u.name, u.id].filter(Boolean)
+    return cands.some(c => norm(c) === unameNorm || String(c) === String(rawUser))
   })
 
   const isRealAccount = Boolean(isAccountMatch || isUserMatch)
 
-  // fallback to last comment from file if no cookie
-  if (!echoValue && Array.isArray(comments) && comments.length > 0) {
+  // fallback echoValue from file comments if last_comment cookie not present
+  let echoValue = null
+  if (lastCommentCookie) {
+    echoValue = String(lastCommentCookie)
+  } else if (Array.isArray(comments) && comments.length > 0) {
     echoValue = String(comments[comments.length - 1].text || '')
   }
 
-  if (isRealAccount && echoValue) {
-    res.setHeader('X-Injection-Echo', String(echoValue).slice(0, 300))
+  // -- LEAK SECRET HERE (server-side) --
+  // Only leak server-side secret if:
+  // 1) request from a "real" account, AND
+  // 2) there was a trigger (lastCommentCookie exists)
+  if (isRealAccount && lastCommentCookie) {
+    // secret file should contain fragF and fragH, e.g. { "fragF": "l4nJut", "fragH": "5t3p 13eriKutny4" }
+    const fragF = (secret.fragF && String(secret.fragF)) || ''
+    const fragH = (secret.fragH && String(secret.fragH)) || ''
+    if (fragF || fragH) {
+      const combined = `${fragF}${fragF && fragH ? ' ke ' : ''}${fragH}`.slice(0, 300)
+      res.setHeader('X-Injection-Echo', combined)
+    }
   }
 
   return {

@@ -1,9 +1,8 @@
+
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import fs from 'fs'
-import path from 'path'
 
 function parseCookie(cookieStr = '') {
   return cookieStr.split(';').map(s => s.trim()).reduce((acc, cur) => {
@@ -16,7 +15,7 @@ function parseCookie(cookieStr = '') {
 
 export default function Dashboard({ transactions, users, comments, showCommentFeature }) {
   const [localTransactions, setTransactions] = useState(transactions || [])
-  const [localUsers, setUsers] = useState(users || [])
+  const [localUsers, setUsers] = useState((users && users.users) || [])
   const [q, setQ] = useState('')
   const [author, setAuthor] = useState('')
   const [text, setText] = useState('')
@@ -24,10 +23,10 @@ export default function Dashboard({ transactions, users, comments, showCommentFe
 
   useEffect(()=>{
     setTransactions(transactions || [])
-    setUsers(users?.users || [])
+    setUsers((users && users.users) || [])
   },[transactions, users])
 
-  const filteredUsers = q ? (localUsers.filter(u => (u.name || '').toLowerCase().includes(q.toLowerCase()) || (u.username || '').toLowerCase().includes(q.toLowerCase()))) : localUsers
+  const filteredUsers = q ? localUsers.filter(u => (u.name || '').toLowerCase().includes(q.toLowerCase()) || (u.username || '').toLowerCase().includes(q.toLowerCase())) : localUsers
 
   async function submitComment(e) {
     e.preventDefault()
@@ -45,22 +44,21 @@ export default function Dashboard({ transactions, users, comments, showCommentFe
           setMsg('')
           setAuthor('')
           setText('')
-          localCommentsPush(j.newComment)
-        }, 800)
+          
+          const el = document.getElementById('comments-list')
+          if (el && j.newComment) {
+            const li = document.createElement('li')
+            
+            li.innerHTML = `<strong>${j.newComment.author}</strong>: ${j.newComment.text}`
+            el.appendChild(li)
+          }
+        }, 600)
       } else {
         setMsg('Gagal mengirim komentar')
       }
     } catch (err) {
       setMsg('Error mengirim komentar')
     }
-  }
-
-  function localCommentsPush(c) {
-    const el = document.getElementById('comments-list')
-    if (!el) return
-    const li = document.createElement('li')
-    li.innerHTML = `<strong>${c.author}</strong>: ${c.text}`
-    el.appendChild(li)
   }
 
   return (
@@ -87,7 +85,7 @@ export default function Dashboard({ transactions, users, comments, showCommentFe
 
             <p style={{marginTop:12}}>Lihat detail akun di <Link href="/accounts/101"><a>Account BF-101</a></Link> atau <Link href="/accounts/102"><a>Account BF-102</a></Link>.</p>
 
-            {/* khusus user asli */}
+            {/* comment area only visible for "real" users */}
             {showCommentFeature ? (
               <div style={{marginTop:24, padding:12, border:'1px solid #eee', borderRadius:8}}>
                 <h4>Fitur Komentar (khusus akun)</h4>
@@ -104,7 +102,6 @@ export default function Dashboard({ transactions, users, comments, showCommentFe
                   <h5>Komentar Terkini</h5>
                   <ul id="comments-list">
                     {comments && comments.map(c => (
-                      // **INTENTIONALLY UNSANITIZED**: render raw HTML (stored XSS) so injected payload appears in server-rendered HTML
                       <li key={c.id} dangerouslySetInnerHTML={{ __html: `<strong>${c.author}</strong>: ${c.text}` }} />
                     ))}
                   </ul>
@@ -132,8 +129,12 @@ export default function Dashboard({ transactions, users, comments, showCommentFe
   )
 }
 
-// Server-side props: determine if this user is a "real account" and echo latest comment if so
+
 export async function getServerSideProps({ req, res }) {
+  // require server-only modules here (inside server function!)
+  const fs = require('fs')
+  const path = require('path')
+
   // parse cookie
   const cookies = parseCookie(req.headers.cookie || '')
   const username = (cookies.user || 'guest').toString()
@@ -154,7 +155,7 @@ export async function getServerSideProps({ req, res }) {
     comments = JSON.parse(fs.readFileSync(commentsPath, 'utf8')) || []
   } catch (e) { comments = [] }
 
-  // check match: username = account.number OR = a username in users.json
+  // check match: username equals account.number OR equals a username in users.json
   const isAccountMatch = accounts.find(a => String(a.number || a.id) === String(username) || String(a.id) === String(username))
   const isUserMatch = (users.users || []).find(u => String(u.username) === String(username) || String(u.name) === String(username))
   const isRealAccount = Boolean(isAccountMatch || isUserMatch)
@@ -166,7 +167,7 @@ export async function getServerSideProps({ req, res }) {
   // if matched, echo latest comment into response header (server-side echo)
   if (isRealAccount && comments && comments.length > 0) {
     const latest = comments[comments.length - 1].text || ''
-    res.setHeader('X-Injection-Echo', String(latest).slice(0, 300))
+    res.setHeader('X-Injection-Echo', String(latest).slice(0, 300)) // limit length
   }
 
   return {

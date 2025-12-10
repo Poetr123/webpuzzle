@@ -1,16 +1,23 @@
-import querystring from 'querystring'
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).send('Method not allowed')
+    res.setHeader('Allow', 'POST')
+    return res.status(405).json({ error: 'Method not allowed' })
   }
-  let body = ''
-  req.on('data', (chunk) => { body += chunk })
-  await new Promise(r => req.on('end', r))
-  const parsed = querystring.parse(body)
 
-  const username = String(parsed.username || '').trim() || 'guest'
-  res.setHeader('Set-Cookie', `user=${encodeURIComponent(username)}; Path=/; HttpOnly`)
-  res.writeHead(302, { Location: '/dashboard' })
-  return res.end()
+  try {
+    // Next.js API sudah mem-parse body (application/x-www-form-urlencoded or json)
+    const { username = 'guest' } = req.body || {}
+
+    const safeUser = String(username).trim() || 'guest'
+    // Set cookie (HttpOnly) — Next.js allows setHeader here
+    // Note: tidak menggunakan signed cookie untuk simplicity
+    res.setHeader('Set-Cookie', `user=${encodeURIComponent(safeUser)}; Path=/; HttpOnly; SameSite=Lax`)
+
+    // Redirect to dashboard using 302
+    res.writeHead(302, { Location: '/dashboard' })
+    return res.end()
+  } catch (err) {
+    console.error('login api error', err)
+    return res.status(500).json({ error: 'internal' })
+  }
 }

@@ -54,7 +54,7 @@ export default function Home(){
           </div>
 
           <aside style={{width:300, padding:16, border:'1px solid #f0f0f0', borderRadius:8, background:'#fbfbfb'}}>
-            <h4 style={{marginTop:0}}>Forensik tip</h4>
+            <h4 style={{marginTop:0}}>Catatan Customer Service</h4>
             <p style={{fontSize:13, color:'#666'}}>Folder backup dan response header pada endpoint API mungkin rahasia. File tersembunyi?</p>
             <p style={{fontSize:13, color:'#999', marginTop:6}}>Kacauu</p>
           </aside>
